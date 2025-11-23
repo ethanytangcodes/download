@@ -390,7 +390,6 @@ button.ghost:hover {
   <button id="homeBtn">🏠 home</button>
   <button id="gamesBtn">🎮 games</button>
   <input id="urlBar" readonly placeholder="loading...">
-  <button id="gameLockBtn" title="game lock (G)">🎯</button>
   <button id="masterListBtn">📋 master list</button>
   <button id="adminBtn">🔒 admin</button>
 </header>
@@ -400,12 +399,7 @@ button.ghost:hover {
   <div id="loadingText">loading...</div>
 </div>
 
-<iframe id="webFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-
-<div id="toast">
-  <span id="toastIcon">🎯</span>
-  <span id="toastText">game lock activated</span>
-</div>
+<iframe id="webFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock"></iframe>
 
 <footer>made by Ethan Tang | v1.0.5</footer>
 
@@ -489,106 +483,6 @@ function loadUrl(url) {
 document.getElementById("reloadBtn").onclick = () => loadUrl(currentUrl);
 document.getElementById("homeBtn").onclick = () => navigateTo("home");
 document.getElementById("gamesBtn").onclick = () => navigateTo("games");
-
-// Game Lock (Pointer Lock) functionality
-const gameLockBtn = document.getElementById("gameLockBtn");
-let isGameLocked = false;
-
-function toggleGameLock() {
-  if (!isGameLocked) {
-    // Request fullscreen on iframe first, then pointer lock
-    if (webFrame.requestFullscreen) {
-      webFrame.requestFullscreen().then(() => {
-        if (webFrame.requestPointerLock) {
-          webFrame.requestPointerLock();
-        }
-      });
-    } else if (webFrame.webkitRequestFullscreen) {
-      webFrame.webkitRequestFullscreen();
-      if (webFrame.requestPointerLock) {
-        webFrame.requestPointerLock();
-      }
-    }
-  } else {
-    // Exit pointer lock and fullscreen
-    if (document.exitPointerLock) {
-      document.exitPointerLock();
-    }
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    }
-  }
-}
-
-gameLockBtn.onclick = toggleGameLock;
-
-// Update button state when pointer lock changes
-document.addEventListener('pointerlockchange', () => {
-  isGameLocked = document.pointerLockElement === webFrame;
-  updateGameLockUI();
-});
-
-// Also listen for fullscreen changes
-document.addEventListener('fullscreenchange', () => {
-  // If exiting fullscreen, also exit pointer lock
-  if (!document.fullscreenElement && isGameLocked) {
-    if (document.exitPointerLock) {
-      document.exitPointerLock();
-    }
-    isGameLocked = false;
-    updateGameLockUI();
-  }
-});
-
-// Update UI for game lock
-function updateGameLockUI() {
-  gameLockBtn.style.background = isGameLocked 
-    ? "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))" 
-    : "var(--glass)";
-  gameLockBtn.style.borderColor = isGameLocked 
-    ? "rgba(16, 185, 129, 0.5)" 
-    : "var(--glass-border)";
-  gameLockBtn.title = isGameLocked ? "unlock mouse (G or ESC)" : "game lock (G)";
-  
-  // Show toast notification
-  showToast(isGameLocked);
-}
-
-// Toast notification
-function showToast(isActivated) {
-  const toast = document.getElementById('toast');
-  const toastText = document.getElementById('toastText');
-  const toastIcon = document.getElementById('toastIcon');
-  
-  if (isActivated) {
-    toast.classList.remove('deactivated');
-    toastIcon.textContent = '🎯';
-    toastText.textContent = 'game lock activated';
-  } else {
-    toast.classList.add('deactivated');
-    toastIcon.textContent = '🔓';
-    toastText.textContent = 'game lock deactivated';
-  }
-  
-  toast.classList.add('show');
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 2500);
-}
-
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-  // Only trigger if not typing in an input field
-  if (!['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-    if (e.key === 'g' || e.key === 'G') {
-      e.preventDefault();
-      toggleGameLock();
-    }
-  }
-});
 
 // sanitize URLs to prevent outside navigation
 function sanitizeUrl(url) {
